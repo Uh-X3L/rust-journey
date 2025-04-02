@@ -193,3 +193,16 @@ This protects you at compile time from data races and undefined behavior.
 | Mutable Borrowing  | `&mut` allows changing the value                                         |
 | Borrowing Rules    | Only 1 mutable OR multiple immutable references at a time               |
 
+
+---
+**but what I dont get is that z is not calling y, how doing a push on y affects x, thats where I got lost**
+
+When you write:
+
+```rust
+let mut x = Vec::new();
+let y = &mut x;
+y.push(42);
+```
+
+`y` is just a mutable reference to `x`. Both `x` and `y` point to the same underlying memory. Calling methods like `push` on `y` actually mutates `x`, because there’s only one piece of data in memory—`x` owns it, and `y` simply borrows it.
