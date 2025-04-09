@@ -1,1 +1,0 @@
-/home/rustdev/rust-journey/day\ 6/rust_modular/target/debug/rust_modular: /home/rustdev/rust-journey/day\ 6/rust_modular/src/main.rs /home/rustdev/rust-journey/day\ 6/rust_modular/src/math.rs /home/rustdev/rust-journey/day\ 6/rust_modular/src/messages/greetings.rs /home/rustdev/rust-journey/day\ 6/rust_modular/src/messages/mod.rs
