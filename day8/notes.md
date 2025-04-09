@@ -19,3 +19,6 @@
 - Use `&mut` for modifying balance efficiently
 - CLI will tie theory to real tool development
 
+mkdir -p ~/rust-journey/small_projects/contract-cli
+cd ~/rust-journey/day8/contract-cli
+cargo init
