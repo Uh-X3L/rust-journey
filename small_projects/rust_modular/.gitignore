@@ -1,0 +1,19 @@
+git add# === Rust ===
+/target
+Cargo.lock
+**/*.rs.bk
+
+# === SQLite ===
+*.db
+*.sqlite
+
+# === IDEs ===
+.vscode/
+.idea/
+
+# === OS Files ===
+.DS_Store
+Thumbs.db
+
+# === Logs ===
+*.log
