@@ -1,0 +1,1 @@
+/home/rustdev/rust-journey/small_projects/contract-cli/target/debug/contract-cli: /home/rustdev/rust-journey/small_projects/contract-cli/src/contract.rs /home/rustdev/rust-journey/small_projects/contract-cli/src/main.rs
