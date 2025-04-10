@@ -2,20 +2,21 @@
 
 > A simple, testable smart contract simulation CLI — built in Rust with SQLite and `clap`.
 
-This CLI tool simulates core wallet behaviors such as balance management, deposits, withdrawals, and viewing transaction history, all backed by a lightweight SQLite database.
+This CLI simulates wallet-like smart contract behaviors: deposits, withdrawals, balance checks, and transaction logs — all backed by a lightweight SQLite database.  
 
-It was created as part of a Rust blockchain engineering learning journey — with a focus on modular design, safe state handling, and practical CLI development.
+Built as part of a Rust blockchain engineering journey, it focuses on clean architecture, testability, and data safety.
 
 ---
 
 ## ✨ Features
 
-- 🔐 Persistent owner-based contract data  
-- 💰 Deposit and withdraw balance via CLI  
-- 🧾 View last 5 transactions  
-- 🗃️ Data persistence using SQLite  
-- 📦 Command-line interface via [`clap`](https://crates.io/crates/clap)  
-- 🧪 Built-in unit tests with in-memory databases  
+- 🔐 Owner identity is hashed using SHA-512 (64-bit collision-safe) for secure and consistent IDs  
+- 💰 Deposit and withdraw functionality (with safe DB checks)  
+- 🧾 View recent transaction history (limited to last 5)  
+- 🗃️ SQLite database storage for state persistence  
+- 🔑 Safe SQL using parameterized queries (`params![]`) to prevent injection  
+- 📦 Modern CLI interface using [`clap`](https://crates.io/crates/clap)  
+- 🧪 In-memory unit tests for full logic coverage  
 
 ---
 
@@ -24,7 +25,7 @@ It was created as part of a Rust blockchain engineering learning journey — wit
 ### Prerequisites
 
 - Rust (via [rustup.rs](https://rustup.rs))  
-- SQLite (installed system-wide):
+- SQLite development libraries:
 
 ```bash
 # Linux / WSL (Debian-based)
@@ -38,7 +39,7 @@ sudo apt install libsqlite3-dev
 
 ```bash
 git clone https://github.com/Uh-X3L/rust-journey.git
-cd rust-journey/small_projects/contract-cli
+cd rust-journey/z_small_projects/contract-cli
 cargo build
 ```
 
@@ -47,36 +48,36 @@ cargo build
 ## 🚀 Usage
 
 ```bash
-cargo run -- status
-cargo run -- deposit 200
-cargo run -- withdraw 50
-cargo run -- history
+cargo run -- --owner alice status
+cargo run -- --owner alice deposit --amount 200
+cargo run -- --owner alice withdraw --amount 50
+cargo run -- --owner alice history
 ```
 
 ### Example Output
 
 ```bash
-$ cargo run -- status
+$ cargo run -- --owner alice status
 👤 Owner: alice
 💰 Balance: 150
 
-$ cargo run -- history
-📜 Last 5 transactions:
-[Deposit] +200
-[Withdraw] -50
+$ cargo run -- --owner alice history
+📜 Last 5 transactions for alice:
+123 | deposit: 200
+124 | withdraw: 50
 ```
 
 ---
 
 ## 🧪 Running Tests
 
-This project includes unit tests for contract logic.
+This project includes unit tests for deposit, withdrawal, owner isolation, and transaction logic.
 
 ```bash
 cargo test
 ```
 
-To display debug output:
+To display test output (e.g. println!):
 
 ```bash
 cargo test -- --nocapture
@@ -89,42 +90,62 @@ cargo test -- --nocapture
 ```
 contract-cli/
 ├── src/
-│   ├── main.rs        # CLI setup & entrypoint
-│   └── contract.rs    # Core logic
+│   ├── main.rs           # CLI & command routing
+│   ├── contract.rs       # Core smart contract logic
+│   ├── db/
+│   │   ├── mod.rs        # DB connection and setup
+│   │   └── migrations.rs # DB schema & future upgrades
+│   └── utils/
+│       └── hash.rs       # Owner hashing utility (SHA-512)
 ├── Cargo.toml
 └── README.md
 ```
 
 ---
 
-## 👨‍🔬 Learning Goals
+## 🔐 Security Notes
 
-This project reinforced:
+Rust encourages safe practices by design.  
+All SQL operations use parameterized queries to avoid injection:
 
-- ✅ Modular Rust design (multiple files/modules)  
-- ✅ Safe and testable DB state with SQLite  
-- ✅ CLI dev with `clap`  
-- ✅ Real-world `Result`, `unwrap()`, `match`  
-- ✅ Tests with `#[cfg(test)]` + `Connection::open_in_memory()`  
+```rust
+conn.prepare("SELECT ... WHERE id = ?1")?.query(params![id])?;
+```
+
+Using this approach:
+- ✅ protects from SQL injection
+- ✅ ensures consistent type handling
+- ✅ improves query reusability and performance
+
+---
+
+## 👨‍🔬 Learning Highlights
+
+- ✅ Modular Rust design (submodules for utils/db)  
+- ✅ Secure hashing with `sha2` for identity handling  
+- ✅ SQLite via `rusqlite` with safe `Result<T>`-based error handling  
+- ✅ CLI structure and command parsing with `clap`  
+- ✅ Hands-on practice with unit tests, schema integrity, and constraint checks  
 
 ---
 
 ## 🛣️ Roadmap
 
-- [ ] Multi-user support  
-- [ ] Export to JSON/CSV  
-- [ ] Web UI with `actix-web`  
-- [ ] Command auto-complete / help menu  
+- [x] Multi-user contract support via hashed IDs  
+- [x] Enforced constraint-safe logging (no negative amounts)  
+- [ ] Export history to CSV/JSON  
+- [ ] CLI auto-complete / interactive mode  
+- [ ] Optional web interface via `actix-web`  
 
 ---
 
 ## 📚 License
 
-MIT — use freely and build on it.
+MIT — free to use and build upon.
 
 ---
 
 ## 🤝 Credits
 
-Built with ❤️ during my Rust + Blockchain engineering journey.  
-More at: [github.com/Uh-X3L](https://github.com/Uh-X3L)
+Built with ❤️ during my Rust + Blockchain engineering transition.  
+Follow the journey: [github.com/Uh-X3L](https://github.com/Uh-X3L)
