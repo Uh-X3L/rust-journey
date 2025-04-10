@@ -1,8 +1,5 @@
 use clap::{Parser, Subcommand};
-use rusqlite::{Connection, Result};
-
-mod contract;
-use contract::Contract;
+use contract_cli::{Contract, establish_connection}; // from lib.rs
 
 #[derive(Parser)]
 #[command(name = "Contract CLI")]
@@ -10,6 +7,10 @@ use contract::Contract;
 struct Cli {
     #[command(subcommand)]
     command: Commands,
+
+    /// Contract owner (defaults to 'alice')
+    #[arg(long, default_value = "alice")]
+    owner: String,
 }
 
 #[derive(Subcommand)]
@@ -30,11 +31,11 @@ enum Commands {
     History,
 }
 
-fn main() -> Result<()> {
+fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
-    let conn = Connection::open("contract.db")?;
+    let conn = establish_connection()?; // new helper from db.rs
 
-    let mut contract = Contract::load_or_create(&conn, 1, "alice")?;
+    let mut contract = Contract::load_or_create(&conn, 1, &cli.owner)?;
 
     match cli.command {
         Commands::Status => contract.status(),

@@ -49,39 +49,59 @@ impl Contract {
     }
 
     pub fn deposit(&mut self, conn: &Connection, amount: u64) -> Result<()> {
+        //add a check to see if the amount is greater than 0
+        if amount == 0 {
+            println!("⚠️ Deposit failed. Amount must be greater than 0.");
+            return Ok(());
+        }
         self.balance += amount;
         self.update_balance(conn)?;
         self.log_transaction(conn, amount as i64, "deposit")?;
-        println!("✅ Deposited {}. New balance: {}", amount, self.balance);
+        println!("✅ Transaction successful!");
+        println!("➡️  Action: Deposit");
+        println!("💵  Amount: {}", amount);
+        println!("📊  New Balance: {}", self.balance);
         Ok(())
     }
 
     pub fn withdraw(&mut self, conn: &Connection, amount: u64) -> Result<()> {
+        //add a check to see if the amount is greater than 0
+        if amount == 0 {
+            println!("⚠️ Withdrawal failed. Amount must be greater than 0.");
+            return Ok(());
+        }
         if self.balance >= amount {
             self.balance -= amount;
             self.update_balance(conn)?;
             self.log_transaction(conn, -(amount as i64), "withdraw")?;
-            println!("✅ Withdrew {}. New balance: {}", amount, self.balance);
+            println!("➡️  Action: Withdraw");
+            println!("💵  Amount: {}", amount);
+            println!("📊  New Balance: {}", self.balance);
+
         } else {
-            println!("❌ Insufficient funds. Balance: {}", self.balance);
+            println!("❌ Withdrawal failed. Insufficient balance.");
+            println!("💰 Current Balance: {}", self.balance);
+            println!("🧾 Requested: {}", amount);
+
         }
         Ok(())
     }
 
     pub fn show_history(&self, conn: &Connection) -> Result<()> {
         let mut stmt = conn.prepare(
-            "SELECT tx_type, amount FROM transactions
+            "SELECT id, tx_type, amount FROM transactions
              WHERE contract_id = ?1
              ORDER BY id DESC
              LIMIT 5",
         )?;
 
         let mut rows = stmt.query(params![self.id])?;
-        println!("📜 Last 5 transactions:");
+        println!("📜 Last 5 transactions for {}:", self.owner);
         while let Some(row) = rows.next()? {
-            let tx_type: String = row.get(0)?;
-            let amount: i64 = row.get(1)?;
-            println!("- {}: {}", tx_type, amount);
+            let tx_id: i32 = row.get(0)?;
+            let tx_type: String = row.get(1)?;
+            let amount: i64 = row.get(2)?;
+            println!("{} | {}: {}", tx_id, tx_type, amount);
         }
         Ok(())
     }
