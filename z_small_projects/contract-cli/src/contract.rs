@@ -108,3 +108,45 @@ impl Contract {
         Ok(())
     }
 }
+
+#[test]
+fn test_deposit_increases_balance() {
+    let conn = Connection::open_in_memory().unwrap();
+    let mut contract = Contract::load_or_create(&conn, 1, "Alice").unwrap();
+    contract.deposit(&conn, 100).unwrap();
+    assert_eq!(contract.balance, 100);
+}
+
+#[test]
+fn test_withdraw_decreases_balance() {
+    let conn = Connection::open_in_memory().unwrap();
+    let mut contract = Contract::load_or_create(&conn, 1, "Alice").unwrap();
+    contract.deposit(&conn, 100).unwrap();
+    contract.withdraw(&conn, 50).unwrap();
+    assert_eq!(contract.balance, 50);
+}
+
+#[test]
+fn test_withdraw_insufficient_funds() {
+    let conn = Connection::open_in_memory().unwrap();
+    let mut contract = Contract::load_or_create(&conn, 1, "Alice").unwrap();
+    contract.deposit(&conn, 100).unwrap();
+    contract.withdraw(&conn, 150).unwrap();
+    assert_eq!(contract.balance, 100);
+}
+
+#[test]
+fn test_show_history() {
+    let conn = Connection::open_in_memory().unwrap();
+    let mut contract = Contract::load_or_create(&conn, 1, "Alice").unwrap();
+    contract.deposit(&conn, 100).unwrap();
+    contract.withdraw(&conn, 50).unwrap();
+    contract.show_history(&conn).unwrap();
+}
+
+#[test]
+fn test_status() {
+    let conn = Connection::open_in_memory().unwrap();
+    let contract = Contract::load_or_create(&conn, 1, "Alice").unwrap();
+    contract.status();
+}
