@@ -1,16 +1,22 @@
 use clap::{Parser, Subcommand};
-use contract_cli::{Contract, establish_connection}; // from lib.rs
+use contract_cli::{Contract, establish_connection,utils}; // from lib.rs
+
+
+
+
 
 #[derive(Parser)]
 #[command(name = "Contract CLI")]
 #[command(about = "Interact with your contract", long_about = None)]
 struct Cli {
-    #[command(subcommand)]
-    command: Commands,
-
     /// Contract owner (defaults to 'alice')
     #[arg(long, default_value = "alice")]
     owner: String,
+
+    #[command(subcommand)]
+    command: Commands,
+
+
 }
 
 #[derive(Subcommand)]
@@ -34,8 +40,9 @@ enum Commands {
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let conn = establish_connection()?; // new helper from db.rs
+    let contract_id = utils::hash::hash_owner(&cli.owner);
 
-    let mut contract = Contract::load_or_create(&conn, 1, &cli.owner)?;
+    let mut contract = Contract::load_or_create(&conn, contract_id, &cli.owner)?;
 
     match cli.command {
         Commands::Status => contract.status(),

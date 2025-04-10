@@ -7,3 +7,4 @@ fn main() {
 
     messages::greetings::hello("Rustacean");
 }
+``

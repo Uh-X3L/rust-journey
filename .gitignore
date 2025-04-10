@@ -1,9 +1,9 @@
 # === Rust ===
 /target
-**/*.rs.bk
 Cargo.lock
+**/*.rs.bk
 
-# === SQLite files (if using sqlite for testing) ===
+# === SQLite ===
 *.db
 *.sqlite
 
@@ -11,9 +11,9 @@ Cargo.lock
 .vscode/
 .idea/
 
-# === OS junk ===
+# === OS Files ===
 .DS_Store
 Thumbs.db
 
-# === Logs / misc ===
+# === Logs ===
 *.log
