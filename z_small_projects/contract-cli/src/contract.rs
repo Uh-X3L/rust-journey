@@ -1,5 +1,4 @@
 use rusqlite::{params, Connection, Result};
-use crate::utils::hash::hash_owner;
 
 #[derive(Debug)]
 pub struct Contract {
