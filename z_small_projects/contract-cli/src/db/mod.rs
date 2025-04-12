@@ -1,3 +1,6 @@
+pub mod run_migrations;
+pub use run_migrations::apply as run_migrations;
+pub use run_migrations::reset_specific_migrations;
 
 use rusqlite::{Connection, Result};
 
@@ -8,3 +11,5 @@ pub fn establish_connection() -> Result<Connection> {
     conn.execute("PRAGMA foreign_keys = ON;", [])?;
     Ok(conn)
 }
+
+

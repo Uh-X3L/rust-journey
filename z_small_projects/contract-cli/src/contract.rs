@@ -9,6 +9,7 @@ pub struct Contract {
 
 impl Contract {
     pub fn load_or_create(conn: &Connection, contract_id: String , owner: &str) -> Result<Self> {
+        // First, create tables if they don't exist
         conn.execute(
             "CREATE TABLE IF NOT EXISTS contract (
                 contract_id TEXT PRIMARY KEY,
@@ -25,12 +26,25 @@ impl Contract {
                 amount       INTEGER NOT NULL CHECK(amount >= 0),
                 timestamp    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-                FOREIGN KEY (contract_id) REFERENCES contracts(contract_id)
+                FOREIGN KEY (contract_id) REFERENCES contract(contract_id)
                     ON DELETE CASCADE
                     ON UPDATE CASCADE
             )", [],
         )?;
 
+        // Check if contract exists and create it if it doesn't
+        let mut stmt = conn.prepare("SELECT contract_id FROM contract WHERE contract_id = ?1")?;
+        let contract_exists = stmt.exists(params![&contract_id])?;
+
+        if !contract_exists {
+            // Create the contract record first before any transactions
+            conn.execute(
+                "INSERT INTO contract (contract_id, owner, balance) VALUES (?1, ?2, ?3)",
+                params![contract_id, owner, 0],
+            )?;
+        }
+
+        // Now retrieve the contract data
         let mut stmt = conn.prepare("SELECT owner, balance FROM contract WHERE contract_id = ?1")?;
         let mut rows = stmt.query(params![contract_id])?;
 
@@ -41,15 +55,8 @@ impl Contract {
                 balance: row.get(1)?,
             })
         } else {
-            conn.execute(
-                "INSERT INTO contract (contract_id, owner, balance) VALUES (?1, ?2, ?3)",
-                params![contract_id, owner, 0],
-            )?;
-            Ok(Self {
-                contract_id,
-                owner: owner.to_string(),
-                balance: 0,
-            })
+            // This should never happen since we just created the contract if it didn't exist
+            Err(rusqlite::Error::QueryReturnedNoRows)
         }
     }
 
@@ -59,13 +66,36 @@ impl Contract {
             println!("⚠️ Deposit failed. Amount must be greater than 0.");
             return Ok(());
         }
+        
+        // First verify contract exists in the database before proceeding
+        let mut stmt = conn.prepare("SELECT contract_id FROM contract WHERE contract_id = ?1")?;
+        let contract_exists = stmt.exists(params![&self.contract_id])?;
+        
+        if !contract_exists {
+            // Re-create the contract if it doesn't exist (should not happen, but just in case)
+            conn.execute(
+                "INSERT INTO contract (contract_id, owner, balance) VALUES (?1, ?2, ?3)",
+                params![&self.contract_id, &self.owner, 0],
+            )?;
+        }
+        
         self.balance += amount;
         self.update_balance(conn)?;
-        self.log_transaction(conn, amount as i64, "deposit")?;
-        println!("✅ Transaction successful!");
-        println!("➡️  Action: Deposit");
-        println!("💵  Amount: {}", amount);
-        println!("📊  New Balance: {}", self.balance);
+        match self.log_transaction(conn, amount as i64, "deposit") {
+            Ok(_) => {
+                println!("✅ Transaction successful!");
+                println!("➡️  Action: Deposit");
+                println!("💵  Amount: {}", amount);
+                println!("📊  New Balance: {}", self.balance);
+            },
+            Err(e) => {
+                // Rollback the balance update if transaction logging fails
+                self.balance -= amount;
+                self.update_balance(conn)?;
+                println!("❌ Transaction failed: {}", e);
+                return Err(e);
+            }
+        }
         Ok(())
     }
 
@@ -125,10 +155,21 @@ impl Contract {
     }
 
     fn log_transaction(&self, conn: &Connection, amount: i64, tx_type: &str) -> Result<()> {
+        // First check if contract exists before logging transaction
+        let mut check_stmt = conn.prepare("SELECT 1 FROM contract WHERE contract_id = ?1")?;
+        let exists = check_stmt.exists(params![&self.contract_id])?;
+        
+        if !exists {
+            return Err(rusqlite::Error::SqliteFailure(
+                rusqlite::ffi::Error::new(787), // Foreign key constraint code
+                Some(format!("Contract ID {} not found in contract table", self.contract_id))
+            ));
+        }
+        
         conn.execute(
             "INSERT INTO transactions (contract_id, tx_type, amount)
              VALUES (?1, ?2, ?3)",
-            params![self.contract_id, tx_type, amount],
+            params![&self.contract_id, tx_type, amount],
         )?;
         Ok(())
     }

@@ -1,20 +1,26 @@
 use rusqlite::{params, Connection, Result};
-use crate::utils::hash::hash_owner; 
-
-
-/// Hashes a string to a SHA-512 hex representation
-fn hash_owner(owner: &str) -> String {
-    let mut hasher = Sha512::new();
-    hasher.update(owner.as_bytes());
-    hex::encode(hasher.finalize())
-}
+use crate::utils::hash::hash_owner; // Import hash_owner from utils
 
 /// Migrates data from old_contract and old_transactions into new schema
 pub fn run(conn: &Connection) -> Result<()> {
     println!("🔄 Migrating data from old_contract and old_transactions...");
+    
+    // Check if old tables exist
+    let old_contract_exists = table_exists(conn, "old_contract")?;
+    let old_transactions_exists = table_exists(conn, "old_transactions")?;
+    
+    if !old_contract_exists {
+        println!("⚠️ Table 'old_contract' does not exist. Skipping contract migration.");
+        return Ok(());
+    }
+    
+    if !old_transactions_exists {
+        println!("⚠️ Table 'old_transactions' does not exist. Skipping transaction migration.");
+        return Ok(());
+    }
 
     // 1. Migrate contracts
-    let mut stmt = conn.prepare("SELECT id, owner, balance FROM old_contract")?;
+    let mut stmt = conn.prepare("SELECT contract_id, owner, balance FROM old_contract")?;
     let contract_rows = stmt.query_map([], |row| {
         let owner: String = row.get(1)?;
         let contract_id = hash_owner(&owner);
@@ -25,7 +31,7 @@ pub fn run(conn: &Connection) -> Result<()> {
     for result in contract_rows {
         let (contract_id, owner, balance) = result?;
         conn.execute(
-            "INSERT OR IGNORE INTO contracts (contract_id, owner, balance) VALUES (?1, ?2, ?3)",
+            "INSERT OR IGNORE INTO contract (contract_id, owner, balance) VALUES (?1, ?2, ?3)",
             params![contract_id, owner, balance],
         )?;
     }
@@ -45,7 +51,11 @@ pub fn run(conn: &Connection) -> Result<()> {
         )?;
 
         let contract_id = hash_owner(&owner);
-        Ok((contract_id, tx_type, amount))
+        
+        // Handle potentially negative amounts
+        let safe_amount = if amount < 0 { 0 } else { amount };
+        
+        Ok((contract_id, tx_type, safe_amount))
     })?;
 
     for result in tx_rows {
@@ -59,4 +69,14 @@ pub fn run(conn: &Connection) -> Result<()> {
 
     println!("✅ Data migration complete.");
     Ok(())
+}
+
+// Helper function to check if a table exists
+fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
+    let count: i64 = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1",
+        params![table_name],
+        |row| row.get(0)
+    )?;
+    Ok(count > 0)
 }
