@@ -1,4 +1,4 @@
-use sha2::{Sha512, Digest};
+use sha2::{Digest, Sha512};
 
 /// Converts an owner string to a SHA-512 hex string
 pub fn hash_owner(owner: &str) -> String {

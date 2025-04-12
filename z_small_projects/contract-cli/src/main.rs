@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use contract_cli::db::run_migrations;
 use contract_cli::{Contract, establish_connection, utils}; // from lib.rs
 
 #[derive(Parser)]
@@ -29,12 +30,18 @@ enum Commands {
     },
     /// Show last 5 transactions
     History,
+
+    /// Run a specific database migration
+    Migrate {
+        /// Name of the migration file to run (e.g., m_20240414_002_data_transform.rs)
+        #[arg(long)]
+        filename: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     let conn = establish_connection()?; // new helper from db.rs
-
 
     let contract_id = utils::hash::hash_owner(&cli.owner);
 
@@ -45,6 +52,9 @@ fn main() -> anyhow::Result<()> {
         Commands::Deposit { amount } => contract.deposit(&conn, amount)?,
         Commands::Withdraw { amount } => contract.withdraw(&conn, amount)?,
         Commands::History => contract.show_history(&conn)?,
+        Commands::Migrate { filename } => {
+            run_migrations(&conn, &filename)?;
+        }
     }
 
     Ok(())

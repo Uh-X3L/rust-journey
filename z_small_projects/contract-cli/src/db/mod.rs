@@ -11,5 +11,3 @@ pub fn establish_connection() -> Result<Connection> {
     conn.execute("PRAGMA foreign_keys = ON;", [])?;
     Ok(conn)
 }
-
-

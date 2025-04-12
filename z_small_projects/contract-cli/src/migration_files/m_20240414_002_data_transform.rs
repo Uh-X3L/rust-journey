@@ -1,19 +1,19 @@
-use rusqlite::{params, Connection, Result};
-use crate::utils::hash::hash_owner; // Import hash_owner from utils
+use crate::utils::hash::hash_owner;
+use rusqlite::{Connection, Result, params}; // Import hash_owner from utils
 
 /// Migrates data from old_contract and old_transactions into new schema
 pub fn run(conn: &Connection) -> Result<()> {
     println!("🔄 Migrating data from old_contract and old_transactions...");
-    
+
     // Check if old tables exist
     let old_contract_exists = table_exists(conn, "old_contract")?;
     let old_transactions_exists = table_exists(conn, "old_transactions")?;
-    
+
     if !old_contract_exists {
         println!("⚠️ Table 'old_contract' does not exist. Skipping contract migration.");
         return Ok(());
     }
-    
+
     if !old_transactions_exists {
         println!("⚠️ Table 'old_transactions' does not exist. Skipping transaction migration.");
         return Ok(());
@@ -51,10 +51,10 @@ pub fn run(conn: &Connection) -> Result<()> {
         )?;
 
         let contract_id = hash_owner(&owner);
-        
+
         // Handle potentially negative amounts
         let safe_amount = if amount < 0 { 0 } else { amount };
-        
+
         Ok((contract_id, tx_type, safe_amount))
     })?;
 
@@ -76,7 +76,7 @@ fn table_exists(conn: &Connection, table_name: &str) -> Result<bool> {
     let count: i64 = conn.query_row(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1",
         params![table_name],
-        |row| row.get(0)
+        |row| row.get(0),
     )?;
     Ok(count > 0)
 }
