@@ -1,4 +1,5 @@
 use rusqlite::{Connection, Result, params};
+use log::{info, warn, error};
 
 #[derive(Debug)]
 pub struct Contract {
@@ -66,7 +67,7 @@ impl Contract {
     pub fn deposit(&mut self, conn: &Connection, amount: u64) -> Result<()> {
         //add a check to see if the amount is greater than 0
         if amount == 0 {
-            println!("⚠️ Deposit failed. Amount must be greater than 0.");
+            warn!("⚠️ Deposit failed. Amount must be greater than 0.");
             return Ok(());
         }
 
@@ -105,7 +106,7 @@ impl Contract {
     pub fn withdraw(&mut self, conn: &Connection, amount: u64) -> Result<()> {
         //add a check to see if the amount is greater than 0
         if amount == 0 {
-            println!("⚠️ Withdrawal failed. Amount must be greater than 0.");
+            warn!("⚠️ Withdrawal failed. Amount must be greater than 0.");
             return Ok(());
         }
         if self.balance >= amount {

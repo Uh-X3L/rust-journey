@@ -1,21 +1,22 @@
 use crate::utils::hash::hash_owner;
 use rusqlite::{Connection, Result, params}; // Import hash_owner from utils
+use log::{info, warn};
 
 /// Migrates data from old_contract and old_transactions into new schema
 pub fn run(conn: &Connection) -> Result<()> {
-    println!("🔄 Migrating data from old_contract and old_transactions...");
+    info!("🔄 Migrating data from old_contract and old_transactions...");
 
     // Check if old tables exist
     let old_contract_exists = table_exists(conn, "old_contract")?;
     let old_transactions_exists = table_exists(conn, "old_transactions")?;
 
     if !old_contract_exists {
-        println!("⚠️ Table 'old_contract' does not exist. Skipping contract migration.");
+        warn!("⚠️ Table 'old_contract' does not exist. Skipping contract migration.");
         return Ok(());
     }
 
     if !old_transactions_exists {
-        println!("⚠️ Table 'old_transactions' does not exist. Skipping transaction migration.");
+        warn!("⚠️ Table 'old_transactions' does not exist. Skipping transaction migration.");
         return Ok(());
     }
 
@@ -67,7 +68,7 @@ pub fn run(conn: &Connection) -> Result<()> {
         )?;
     }
 
-    println!("✅ Data migration complete.");
+    info!("✅ Data migration complete.");
     Ok(())
 }
 

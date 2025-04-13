@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use contract_cli::db::run_migrations;
 use contract_cli::{Contract, establish_connection, utils}; // from lib.rs
+use env_logger; // added import
 
 #[derive(Parser)]
 #[command(name = "Contract CLI")]
@@ -40,6 +41,7 @@ enum Commands {
 }
 
 fn main() -> anyhow::Result<()> {
+    env_logger::init(); // Logging is now enabled
     let cli = Cli::parse();
     let conn = establish_connection()?; // new helper from db.rs
 

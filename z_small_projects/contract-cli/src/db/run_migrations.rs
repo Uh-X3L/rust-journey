@@ -1,5 +1,8 @@
 use crate::migration_files::m_20240414_002_data_transform;
 use anyhow::Result;
+use log::info;
+use log::warn;
+use log::error;
 use rusqlite::{Connection, params};
 use std::fs;
 use std::path::Path;
@@ -9,7 +12,7 @@ use std::time::Instant; // Import the migration module
 pub fn reset_specific_migrations(conn: &Connection, migration_names: &[&str]) -> Result<()> {
     // Delete the specified migrations from the migrations table
     for name in migration_names {
-        println!("🔄 Resetting migration: {}", name);
+        info!("🔄 Resetting migration: {}", name);
         conn.execute("DELETE FROM migrations WHERE filename = ?1", params![name])
             .map_err(anyhow::Error::from)?;
     }
@@ -53,12 +56,12 @@ pub fn apply(conn: &Connection, filename: &str) -> Result<()> {
     // 🧠 Dispatch based on file extension
     let result: Result<()> = match path.extension().and_then(|ext| ext.to_str()) {
         Some("sql") => {
-            println!("🧱 Running SQL migration: {}", filename);
+            info!("🧱 Running SQL migration: {}", filename);
             let sql = fs::read_to_string(filename).map_err(anyhow::Error::from)?;
             conn.execute_batch(&sql).map_err(anyhow::Error::from)
         }
         Some("rs") => {
-            println!("🧪 Running Rust migration: {}", filename);
+            info!("🧪 Running Rust migration: {}", filename);
             // Dynamically match migration module by filename
             match filename.strip_suffix(".rs") {
                 Some("m_20240414_002_data_transform") => {
@@ -69,7 +72,7 @@ pub fn apply(conn: &Connection, filename: &str) -> Result<()> {
         }
         _ => {
             status = "skipped";
-            println!("⚠️ Skipping unsupported file: {}", filename);
+            warn!("⚠️ Skipping unsupported file: {}", filename);
             Ok(())
         }
     };
@@ -95,8 +98,8 @@ pub fn apply(conn: &Connection, filename: &str) -> Result<()> {
 
     // 🟩🟥 Print migration status
     match status {
-        "success" => println!("✅ Completed in {} ms", duration),
-        "failed" => println!("❌ Failed: {} — {}", filename, error_message.unwrap()),
+        "success" => info!("✅ Completed in {} ms", duration),
+        "failed" => error!("❌ Failed: {} — {}", filename, error_message.unwrap()),
         _ => {}
     }
 
